@@ -18,11 +18,11 @@ email:
 description: >- # this means to ignore newlines until "baseurl:"
   thanks for reading! these are my attempts to provide important historical
   context and frameworks for critical thinking about current events. synthesis
-  and learning are evolving challenge in the age of information and data, and
+  and learning are evolving challenges in the age of information and data, and
   I hope to share some of the tools I use to make sense from the constant
   noise and implement the constant self-curiosity needed to maintain a truly
   open mind.
-baseurl: "dylanhudson.github.io" # the subpath of your site, e.g. /blog
+baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username:
 github_username:
