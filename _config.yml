@@ -13,15 +13,11 @@
 # you will see them accessed via {{ site.title }}, {{ site.email }}, and so on.
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
-title: ask & answer
+title: dread & dream
 email:
 description: >- # this means to ignore newlines until "baseurl:"
-  thanks for reading! these are my attempts to provide important historical
-  context and frameworks for critical thinking about current events. synthesis
-  and learning are evolving challenges in the age of information and data, and
-  I hope to share some of the tools I use to make sense from the constant
-  noise and implement the constant self-curiosity needed to maintain a truly
-  open mind.
+   articles and essays about understanding and acknowledging ourselves and
+   our pasts, so we might better and more compassionately understand our present.
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username:
