@@ -73,7 +73,6 @@ layout: default
   .intro-section {
     text-align: center;
     padding: 4rem 0;
-    background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
     margin: -2rem -2rem 3rem -2rem;
     border-radius: 0 0 15px 15px;
   }
@@ -81,7 +80,6 @@ layout: default
   .intro-section h1 {
     font-size: 3rem;
     margin-bottom: 1rem;
-    background: linear-gradient(45deg, #4a90e2, #7db4f0);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
