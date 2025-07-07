@@ -28,9 +28,7 @@ layout: default
   .project-section {
     margin: 3rem 0;
     padding: 2rem;
-    background-color: #2d2d2d;
     border-radius: 8px;
-    border-left: 4px solid #4a90e2;
   }
   
   .project-grid {
@@ -41,10 +39,8 @@ layout: default
   }
   
   .project-card {
-    background-color: #3d3d3d;
     padding: 1.5rem;
     border-radius: 6px;
-    border: 1px solid #4a90e2;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
   
@@ -148,7 +144,7 @@ layout: default
 
   <div class="project-section">
     <h2>Connect</h2>
-    <div style="text-align: center; margin-top: 2rem;">
+    <div style="text-align: left; margin-top: 2rem;">
       <a href="https://github.com/dylanhudson" class="project-link" style="margin: 0 1rem;">GitHub</a>
       <a href="mailto:dylan.hudson@gmail.com" class="project-link" style="margin: 0 1rem;">Email</a>
       <a href="#" class="project-link" style="margin: 0 1rem;">LinkedIn</a>
