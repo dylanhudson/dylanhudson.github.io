@@ -23,7 +23,7 @@ github_username: dylanhudson
 
 # Build settings
 markdown: kramdown
-theme: moonwalk
+theme: minima
 plugins:
   - jekyll-feed
 
