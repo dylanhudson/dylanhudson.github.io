@@ -121,7 +121,7 @@ html, body {
 
 /* ── About page ── */
 .about-wrap {
-  max-width: 560px;
+  max-width: 720px;
   width: 100%;
   text-align: left;
   background: rgba(10, 10, 10, 0.28);
