@@ -27,7 +27,7 @@ html, body {
   position: fixed;
   inset: 0;
   background: url('background.jpg') center 30% / cover no-repeat;
-  filter: grayscale(35%) brightness(0.72);
+  filter: grayscale(15%) brightness(0.90);
   z-index: 0;
 }
 
@@ -52,7 +52,7 @@ html, body {
   gap: 1.25rem;
   max-width: 480px;
   width: 100%;
-  background: rgba(10, 10, 10, 0.28);
+  background: rgba(4, 4, 4, 0.28);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border);

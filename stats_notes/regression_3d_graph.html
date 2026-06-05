@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OLS Regression — 3D Concept Graph</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0f0e17; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; }
+  canvas { display: block; }
+
+  /* CSS2D node labels */
+  .node-lbl {
+    color: #fffffe;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    background: rgba(15, 14, 23, 0.82);
+    padding: 3px 7px 3px 6px;
+    border-radius: 3px;
+    pointer-events: none;
+    white-space: nowrap;
+    border-left: 2px solid currentColor;
+    letter-spacing: 0.03em;
+  }
+
+  /* CSS2D edge labels */
+  .edge-lbl {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    background: rgba(15, 14, 23, 0.75);
+    padding: 1px 5px;
+    border-radius: 2px;
+    pointer-events: none;
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+    transition: opacity 0.2s;
+  }
+
+  /* Header */
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+    padding: 0.9rem 1.5rem;
+    display: flex; align-items: baseline; gap: 1rem;
+    background: rgba(15, 14, 23, 0.85);
+    border-bottom: 1px solid #2e2c45;
+    backdrop-filter: blur(12px);
+  }
+  header h1 {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 1.4rem;
+    color: #e8c547;
+    letter-spacing: -0.02em;
+  }
+  header .subtitle {
+    color: #a7a5c0;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* Detail panel */
+  #panel {
+    position: fixed;
+    top: 68px; right: 18px;
+    width: 290px;
+    background: #1a1927;
+    border: 1px solid #2e2c45;
+    border-radius: 4px;
+    padding: 1.2rem 1.3rem;
+    display: none;
+    z-index: 100;
+    animation: slideIn 0.18s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  #panel.open { display: block; }
+  #panel .p-close {
+    position: absolute; top: 0.6rem; right: 0.7rem;
+    background: none; border: none; color: #a7a5c0;
+    font-size: 0.9rem; cursor: pointer; line-height: 1;
+  }
+  #panel .p-close:hover { color: #fffffe; }
+  #panel .p-cat {
+    font-size: 0.58rem; letter-spacing: 0.18em;
+    text-transform: uppercase; margin-bottom: 0.25rem;
+  }
+  #panel .p-formula {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-style: italic;
+    font-size: 1.15rem;
+    margin-bottom: 0.6rem;
+    line-height: 1.3;
+    color: #fffffe;
+  }
+  #panel .p-desc {
+    font-size: 0.7rem; color: #a7a5c0;
+    line-height: 1.65; margin-bottom: 0.8rem;
+  }
+  #panel .p-edges { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  #panel .p-tag {
+    font-size: 0.58rem; padding: 2px 7px;
+    border-radius: 2px; letter-spacing: 0.04em;
+  }
+
+  /* Legend */
+  #legend {
+    position: fixed; bottom: 18px; left: 18px; z-index: 20;
+    background: rgba(26, 25, 39, 0.92);
+    border: 1px solid #2e2c45;
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    display: flex; flex-direction: column; gap: 0.38rem;
+  }
+  .leg-item {
+    display: flex; align-items: center; gap: 0.55rem;
+    font-size: 0.6rem; color: #a7a5c0; letter-spacing: 0.04em;
+  }
+  .leg-line { width: 22px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+  .leg-dot  { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .leg-sep  { height: 1px; background: #2e2c45; margin: 0.25rem 0; }
+  .leg-head { font-size: 0.55rem; letter-spacing: 0.18em; text-transform: uppercase; color: #5a5870; }
+
+  /* View tabs (3D / 2D) */
+  .view-tabs {
+    display: flex;
+    border: 1px solid #2e2c45;
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .view-tab {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.85rem;
+    background: transparent;
+    border: none;
+    color: #5a5870;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+  }
+  .view-tab.active { background: rgba(255,255,255,0.08); color: #fffffe; }
+  .view-tab:hover:not(.active) { color: #a7a5c0; }
+  .view-tab + .view-tab { border-left: 1px solid #2e2c45; }
+
+  /* 2D SVG canvas */
+  #svg2d {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    display: none; background: #0f0e17; cursor: grab; z-index: 6;
+  }
+  #svg2d.active { display: block; }
+
+  /* Toggle buttons */
+  .toggles {
+    margin-left: auto;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .toggle-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    padding: 0.3rem 0.75rem;
+    border-radius: 3px;
+    border: 1px solid #2e2c45;
+    background: transparent;
+    color: #a7a5c0;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    white-space: nowrap;
+  }
+  .toggle-btn.active {
+    color: #fffffe;
+    border-color: #5a587a;
+    background: rgba(255,255,255,0.05);
+  }
+  .toggle-btn:hover {
+    border-color: #7c6af7;
+    color: #fffffe;
+  }
+
+  /* Controls hint */
+  #hint {
+    position: fixed; bottom: 18px; right: 18px; z-index: 20;
+    color: #5a5870; font-size: 0.6rem;
+    text-align: right; line-height: 2;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>OLS Regression</h1>
+  <span class="subtitle">3D Concept Graph — click any node</span>
+  <div class="toggles">
+    <div class="view-tabs">
+      <button class="view-tab active" id="btn3d">3D</button>
+      <button class="view-tab"        id="btn2d">2D</button>
+    </div>
+    <span style="color:#2e2c45;padding:0 0.1rem;user-select:none">|</span>
+    <button class="toggle-btn active" id="btnNodeLabels">node labels</button>
+    <button class="toggle-btn active" id="btnEdgeLabels">edge labels</button>
+  </div>
+</header>
+
+<div id="panel">
+  <button class="p-close" id="closePanel">✕</button>
+  <div class="p-cat" id="pCat"></div>
+  <div class="p-formula" id="pFormula"></div>
+  <div class="p-desc" id="pDesc"></div>
+  <div class="p-edges" id="pEdges"></div>
+</div>
+
+<div id="legend">
+  <div class="leg-head">Node category</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#e8c547"></div>The Model</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#4ecdc4"></div>Estimation</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#7c6af7"></div>Key Quantity</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#a8e6cf"></div>Inference</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#ff6b6b"></div>Tests & Fit</div>
+  <div class="leg-sep"></div>
+  <div class="leg-head">Edge type</div>
+  <div class="leg-item"><div class="leg-line" style="background:#e8c547"></div>feeds (produces)</div>
+  <div class="leg-item"><div class="leg-line" style="background:#7c6af7"></div>uses (input)</div>
+  <div class="leg-item"><div class="leg-line" style="background:#4ecdc4"></div>enables</div>
+  <div class="leg-item"><div class="leg-line" style="background:#ff6b6b"></div>derived from</div>
+</div>
+
+<div id="hint">drag · rotate<br>scroll · zoom<br>click · details</div>
+
+<svg id="svg2d" xmlns="http://www.w3.org/2000/svg"></svg>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { Line2 } from 'three/addons/lines/Line2.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
+
+// ─── DATA ────────────────────────────────────────────────────────────────────
+
+const ECOLS = { feeds: 0xe8c547, uses: 0x7c6af7, enables: 0x4ecdc4, from: 0xff6b6b };
+const ECOLS_CSS = { feeds: '#e8c547', uses: '#7c6af7', enables: '#4ecdc4', from: '#ff6b6b' };
+
+// One consistent color per category (matches the HTML legend above)
+const CAT_COLORS = {
+  'The Model':    '#e8c547',
+  'Estimation':   '#4ecdc4',
+  'Key Quantity': '#7c6af7',
+  'Inference':    '#a8e6cf',
+  'Tests & Fit':  '#ff6b6b',
+};
+
+const NODES = [
+  {
+    id: 'true-model', label: 'True Model', cat: 'The Model',
+    formula: 'Y = Xβ + ε',
+    desc: 'The data-generating process. β and X are fixed constants. Y is random because ε is random. We never observe the true β.',
+    pos: [-14, 24, 5],
+  },
+  {
+    id: 'epsilon', label: 'ε (Error Term)', cat: 'The Model',
+    formula: 'ε ~ N(0, σ²I)',
+    desc: 'Captures noise, omitted variables, measurement error. Zero mean means OLS is unbiased. Normality justifies t and F tests. σ² is unknown.',
+    pos: [2, 24, -6],
+  },
+  {
+    id: 'eyx', label: 'E[Y | X]', cat: 'The Model',
+    formula: 'E[Y|X] = Xβ',
+    desc: 'The mean function — the systematic part of the model. This is what Ŷ estimates on average. ε vanishes when taking expectations since E[ε] = 0.',
+    pos: [14, 24, 5],
+  },
+  {
+    id: 'obj', label: 'S(β) — OLS Objective', cat: 'Estimation',
+    formula: 'S(β) = (Y − Xβ)ᵀ(Y − Xβ)',
+    desc: 'The sum of squared residuals as a function of any β. Expanding gives YᵀY − 2βᵀXᵀY + βᵀXᵀXβ. We minimize this over all possible β values — β̂ is not yet known at this stage.',
+    pos: [-12, 9, -3],
+  },
+  {
+    id: 'normal-eq', label: 'Normal Equations', cat: 'Estimation',
+    formula: 'XᵀXβ = XᵀY',
+    desc: 'Setting ∂S/∂β = 0. Called "normal" because residuals are orthogonal (perpendicular) to col(X) — not related to the normal distribution.',
+    pos: [9, 9, 8],
+  },
+  {
+    id: 'beta-hat', label: 'β̂ — OLS Estimator', cat: 'Key Quantity',
+    formula: 'β̂ = (XᵀX)⁻¹XᵀY',
+    desc: 'Solves the normal equations. BLUE by Gauss-Markov (needs E[ε|X]=0, homoskedasticity). Also the MLE when ε is normal. Requires XᵀX invertible.',
+    pos: [0, -3, 0],
+  },
+  {
+    id: 'y-hat', label: 'Ŷ — Fitted Values', cat: 'Key Quantity',
+    formula: 'Ŷ = Xβ̂ = HY',
+    desc: 'The projection of Y onto col(X). H = X(XᵀX)⁻¹Xᵀ is the hat matrix — symmetric (Hᵀ=H) and idempotent (H²=H). E[Ŷ] = Xβ.',
+    pos: [-12, -15, 6],
+  },
+  {
+    id: 'residuals', label: 'Residuals', cat: 'Key Quantity',
+    formula: 'e = Y − Ŷ = (I − H)Y',
+    desc: 'Observed minus fitted. Not the same as ε (true error). Orthogonal to Ŷ by construction. Used to check model assumptions and estimate σ².',
+    pos: [12, -15, -5],
+  },
+  {
+    id: 'sse', label: 'SSE', cat: 'Inference',
+    formula: 'SSE = eᵀe = Σ(yᵢ − ŷᵢ)²',
+    desc: 'Sum of squared residuals — how much variation the model cannot explain. This is S(β) evaluated at β̂. Smaller SSE means better fit.',
+    pos: [-6, -29, -2],
+  },
+  {
+    id: 'sigma-hat', label: 'σ̂  (Residual SE)', cat: 'Inference',
+    formula: 's = √(SSE / (n − p))',
+    desc: 'Estimates the unknown σ from ε ~ N(0,σ²I). Dividing by n−p (not n) makes it unbiased — p degrees of freedom are consumed estimating β. Appears in R summary output.',
+    pos: [8, -29, 8],
+  },
+  {
+    id: 'var-beta', label: 'Var(β̂)  &  SE(β̂)', cat: 'Inference',
+    formula: 'Var(β̂) = σ²(XᵀX)⁻¹',
+    desc: 'SE(β̂ⱼ) = s√[(XᵀX)⁻¹ⱼⱼ]. In SLR: SE(β̂₁) = s / √Σ(xᵢ−x̄)². More spread in x → smaller SE → more precise estimate.',
+    pos: [18, -26, -3],
+  },
+  {
+    id: 't-stat', label: 't-statistic', cat: 'Tests & Fit',
+    formula: 't = (β̂ⱼ − c) / SE(β̂ⱼ)',
+    desc: 'Tests H₀: βⱼ = c (usually c=0). Follows t(n−p) distribution because σ is estimated. Significant → evidence the predictor has a real linear relationship with Y.',
+    pos: [12, -41, 3],
+  },
+  {
+    id: 'r2', label: 'R²', cat: 'Tests & Fit',
+    formula: 'R² = 1 − SSE/SST',
+    desc: 'Proportion of variance explained. Never decreases when adding predictors. High R² ≠ correct model — a true model can have R²≈0 if σ² is large relative to signal.',
+    pos: [-12, -41, -5],
+  },
+  {
+    id: 'adj-r2', label: 'Adjusted R²', cat: 'Tests & Fit',
+    formula: '1 − [(1−R²)(n−1) / (n−k−1)]',
+    desc: 'Penalizes for number of predictors k. Can decrease when adding unhelpful predictors. Better for comparing models of different sizes than raw R².',
+    pos: [0, -41, 9],
+  },
+];
+
+// Derive color from category
+NODES.forEach(n => { n.color = CAT_COLORS[n.cat]; });
+
+const EDGES = [
+  { from: 'true-model', to: 'obj',       label: 'feeds objective', type: 'feeds' },
+  { from: 'true-model', to: 'epsilon',   label: 'contains',        type: 'feeds' },
+  { from: 'true-model', to: 'eyx',       label: 'defines E[Y|X]',  type: 'enables' },
+  { from: 'epsilon',    to: 'sigma-hat', label: 'σ² unknown → estimate', type: 'feeds' },
+  { from: 'epsilon',    to: 't-stat',    label: 'normality enables', type: 'enables' },
+  { from: 'eyx',        to: 'y-hat',     label: 'Ŷ is unbiased for', type: 'feeds' },
+  { from: 'obj',        to: 'normal-eq', label: '∂S/∂β = 0',       type: 'feeds' },
+  { from: 'obj',        to: 'sse',       label: 'S(β) at β̂',       type: 'feeds' },
+  { from: 'normal-eq',  to: 'beta-hat',  label: 'solves to',        type: 'feeds' },
+  { from: 'beta-hat',   to: 'y-hat',     label: 'Ŷ = Xβ̂',          type: 'feeds' },
+  { from: 'beta-hat',   to: 'residuals', label: 'e = Y − Xβ̂',      type: 'feeds' },
+  { from: 'beta-hat',   to: 't-stat',    label: 'numerator β̂ⱼ',    type: 'feeds' },
+  { from: 'y-hat',      to: 'residuals', label: 'Y − Ŷ',           type: 'feeds' },
+  { from: 'y-hat',      to: 'r2',        label: 'SSR = ΣŶ variation', type: 'feeds' },
+  { from: 'residuals',  to: 'sse',       label: 'eᵀe',              type: 'feeds' },
+  { from: 'sse',        to: 'sigma-hat', label: 'SSE/(n−p)',         type: 'feeds' },
+  { from: 'sse',        to: 'r2',        label: '1 − SSE/SST',      type: 'feeds' },
+  { from: 'sigma-hat',  to: 'var-beta',  label: 'ŝ² × (XᵀX)⁻¹',   type: 'feeds' },
+  { from: 'var-beta',   to: 't-stat',    label: 'SE(β̂ⱼ) denominator', type: 'feeds' },
+  { from: 'r2',         to: 'adj-r2',    label: 'penalise k',       type: 'feeds' },
+];
+
+// ─── BUILD ADJACENCY ──────────────────────────────────────────────────────────
+
+const nodeById = {};
+NODES.forEach(n => { nodeById[n.id] = n; });
+
+const nodeEdgeIdx = {};
+NODES.forEach(n => { nodeEdgeIdx[n.id] = []; });
+EDGES.forEach((e, i) => {
+  nodeEdgeIdx[e.from].push(i);
+  nodeEdgeIdx[e.to].push(i);
+});
+
+// ─── THREE.JS SETUP ───────────────────────────────────────────────────────────
+
+const W = window.innerWidth, H = window.innerHeight;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(W, H);
+renderer.setClearColor(0x0f0e17);
+document.body.appendChild(renderer.domElement);
+
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(W, H);
+labelRenderer.domElement.style.cssText = 'position:fixed;top:0;left:0;pointer-events:none;z-index:5;';
+document.body.appendChild(labelRenderer.domElement);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0f0e17, 0.008);
+
+const camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 800);
+camera.position.set(0, 0, 95);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.minDistance = 18;
+controls.maxDistance = 200;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.4;
+
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+sun.position.set(15, 30, 20);
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0x7c6af7, 0.3);
+fill.position.set(-20, -10, -10);
+scene.add(fill);
+
+// ─── PARTICLE BACKGROUND ──────────────────────────────────────────────────────
+
+{
+  const pts = [];
+  for (let i = 0; i < 1200; i++) {
+    pts.push((Math.random() - 0.5) * 300, (Math.random() - 0.5) * 300, (Math.random() - 0.5) * 300);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  const m = new THREE.PointsMaterial({ color: 0x2e2c45, size: 0.35 });
+  scene.add(new THREE.Points(g, m));
+}
+
+// ─── NODE SPHERES ─────────────────────────────────────────────────────────────
+
+const SPHERE_R = 1.3;
+const nodeMeshes = [];
+const meshToNode = new Map();
+
+NODES.forEach(n => {
+  const col = new THREE.Color(n.color);
+
+  // Glow sphere (slightly larger, transparent)
+  const glowGeo = new THREE.SphereGeometry(SPHERE_R * 1.6, 16, 16);
+  const glowMat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.08 });
+  const glow = new THREE.Mesh(glowGeo, glowMat);
+
+  // Main sphere
+  const geo = new THREE.SphereGeometry(SPHERE_R, 36, 36);
+  const mat = new THREE.MeshPhongMaterial({
+    color: col,
+    emissive: col.clone().multiplyScalar(0.18),
+    shininess: 70,
+    specular: new THREE.Color(0xffffff).multiplyScalar(0.3),
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(...n.pos);
+  glow.position.set(...n.pos);
+
+  mesh.userData.id = n.id;
+  mesh.userData.origCol = col.clone();
+  mesh.userData.origEmissive = col.clone().multiplyScalar(0.18);
+
+  scene.add(glow);
+  scene.add(mesh);
+  nodeMeshes.push(mesh);
+  meshToNode.set(mesh, n);
+  nodeById[n.id]._mesh = mesh;
+  nodeById[n.id]._glow = glow;
+
+  // Node label (CSS2D)
+  const div = document.createElement('div');
+  div.className = 'node-lbl';
+  div.style.color = n.color;
+  div.textContent = n.label;
+  const lbl = new CSS2DObject(div);
+  lbl.position.set(0, SPHERE_R + 0.6, 0);
+  mesh.add(lbl);
+  nodeById[n.id]._labelDiv = div;
+  nodeById[n.id]._lbl = lbl;
+});
+
+// ─── EDGES ────────────────────────────────────────────────────────────────────
+
+const edgeLineObjs = [];
+const edgeLabelObjs = [];
+const lineMaterials = []; // kept for resize resolution updates
+
+const BASE_EDGE_OPACITY = 0.7;
+
+EDGES.forEach((e, i) => {
+  const fromN = nodeById[e.from];
+  const toN   = nodeById[e.to];
+  if (!fromN || !toN) return;
+
+  const fromV = new THREE.Vector3(...fromN.pos);
+  const toV   = new THREE.Vector3(...toN.pos);
+
+  // Curved line using a quadratic bezier with a small perpendicular offset
+  const mid = fromV.clone().lerp(toV, 0.5);
+  mid.add(new THREE.Vector3(
+    (Math.random() - 0.5) * 8,
+    (Math.random() - 0.5) * 5,
+    (Math.random() - 0.5) * 8
+  ));
+
+  const curve = new THREE.QuadraticBezierCurve3(fromV, mid, toV);
+  const pts = curve.getPoints(48);
+
+  // Line2 gives us real pixel-width lines (unlike LineBasicMaterial)
+  const positions = [];
+  pts.forEach(p => positions.push(p.x, p.y, p.z));
+  const lineGeo = new LineGeometry();
+  lineGeo.setPositions(positions);
+  const lineMat = new LineMaterial({
+    color: ECOLS[e.type] || 0xffffff,
+    linewidth: 2.2,            // pixels
+    transparent: true,
+    opacity: BASE_EDGE_OPACITY,
+    resolution: new THREE.Vector2(window.innerWidth, window.innerHeight),
+  });
+  const line = new Line2(lineGeo, lineMat);
+  line.computeLineDistances();
+  scene.add(line);
+  lineMaterials.push(lineMat);
+  edgeLineObjs.push({ line, mat: lineMat, edge: e });
+
+  // Arrowhead cone at destination
+  const dir = toV.clone().sub(fromV).normalize();
+  const arrowOrigin = toV.clone().sub(dir.clone().multiplyScalar(SPHERE_R + 1.3));
+  const arrowHelper = new THREE.ArrowHelper(dir, arrowOrigin, 1.3,
+    ECOLS[e.type] || 0xffffff, 1.1, 0.5);
+  arrowHelper.line.material.transparent = true;
+  arrowHelper.line.material.opacity = 0;  // hide the shaft; the Line2 draws it
+  arrowHelper.cone.material.transparent = true;
+  arrowHelper.cone.material.opacity = BASE_EDGE_OPACITY + 0.1;
+  scene.add(arrowHelper);
+  edgeLineObjs[edgeLineObjs.length - 1].arrow = arrowHelper;
+
+  // Edge label at 45% along curve
+  const labelPt = curve.getPoint(0.45);
+  const div = document.createElement('div');
+  div.className = 'edge-lbl';
+  div.style.color = ECOLS_CSS[e.type] || '#fff';
+  div.style.opacity = '0.7';
+  div.textContent = e.label;
+  const lbl = new CSS2DObject(div);
+  lbl.position.copy(labelPt);
+  scene.add(lbl);
+  edgeLabelObjs.push({ lbl, div, edge: e, idx: i });
+});
+
+// ─── INTERACTION ─────────────────────────────────────────────────────────────
+
+const raycaster = new THREE.Raycaster();
+raycaster.params.Points.threshold = 0.5;
+const mouse = new THREE.Vector2(-9999, -9999);
+let hoveredMesh = null;
+let isDragging = false;
+let mouseDownPos = { x: 0, y: 0 };
+
+document.addEventListener('mousemove', e => {
+  mouse.x =  (e.clientX / window.innerWidth)  * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+});
+
+renderer.domElement.addEventListener('mousedown', e => {
+  mouseDownPos = { x: e.clientX, y: e.clientY };
+  isDragging = false;
+});
+renderer.domElement.addEventListener('mousemove', e => {
+  if (Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y) > 4) isDragging = true;
+});
+renderer.domElement.addEventListener('mouseup', e => {
+  if (isDragging) return;
+  handleClick();
+});
+
+// Stop auto-rotate on manual interaction
+controls.addEventListener('start', () => { controls.autoRotate = false; });
+
+function handleClick() {
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(nodeMeshes);
+  if (hits.length === 0) return;
+  const n = meshToNode.get(hits[0].object);
+  if (!n) return;
+  showPanel(n);
+}
+
+// Panel
+const panel     = document.getElementById('panel');
+const pCat      = document.getElementById('pCat');
+const pFormula  = document.getElementById('pFormula');
+const pDesc     = document.getElementById('pDesc');
+const pEdges    = document.getElementById('pEdges');
+
+document.getElementById('closePanel').addEventListener('click', () => panel.classList.remove('open'));
+
+function showPanel(n) {
+  pCat.textContent = n.cat;
+  pCat.style.color = n.color;
+  pFormula.textContent = n.formula;
+  pDesc.textContent = n.desc;
+  pEdges.innerHTML = '';
+
+  nodeEdgeIdx[n.id].forEach(i => {
+    const e = EDGES[i];
+    const isOut = e.from === n.id;
+    const otherId = isOut ? e.to : e.from;
+    const other = nodeById[otherId];
+    const tag = document.createElement('span');
+    tag.className = 'p-tag';
+    const c = ECOLS_CSS[e.type];
+    tag.style.color = c;
+    tag.style.border = `1px solid ${c}40`;
+    tag.style.background = `${c}18`;
+    tag.textContent = isOut
+      ? `→ ${e.label} → ${other.label}`
+      : `← ${e.label} ← ${other.label}`;
+    pEdges.appendChild(tag);
+  });
+
+  panel.classList.remove('open');
+  void panel.offsetWidth; // reflow for animation
+  panel.classList.add('open');
+}
+
+// ─── HOVER HIGHLIGHTING ───────────────────────────────────────────────────────
+
+function setHover(nodeId) {
+  const activeEdges = new Set(nodeId ? nodeEdgeIdx[nodeId] : []);
+  const connectedNodes = new Set();
+  if (nodeId) {
+    connectedNodes.add(nodeId);
+    activeEdges.forEach(i => {
+      connectedNodes.add(EDGES[i].from);
+      connectedNodes.add(EDGES[i].to);
+    });
+  }
+
+  NODES.forEach(n => {
+    const m = n._mesh;
+    if (!m) return;
+    const active = !nodeId || connectedNodes.has(n.id);
+    const isPrimary = n.id === nodeId;
+    m.material.opacity = active ? 1 : 0.18;
+    m.material.transparent = !active;
+    m.scale.setScalar(isPrimary ? 1.22 : 1);
+    m.material.emissive.set(
+      isPrimary
+        ? n._mesh.userData.origCol.clone().multiplyScalar(0.5)
+        : n._mesh.userData.origEmissive
+    );
+  });
+
+  edgeLineObjs.forEach((obj, i) => {
+    const active = !nodeId || activeEdges.has(i);
+    obj.mat.opacity = active ? (nodeId ? 1.0 : BASE_EDGE_OPACITY) : 0.07;
+    if (obj.arrow) {
+      obj.arrow.line.material.opacity = 0; // shaft always hidden
+      obj.arrow.cone.material.opacity = active ? (nodeId ? 1.0 : BASE_EDGE_OPACITY + 0.1) : 0.07;
+    }
+  });
+
+  edgeLabelObjs.forEach(obj => {
+    if (!showEdgeLabels) { obj.div.style.opacity = '0'; return; }
+    const active = !nodeId || activeEdges.has(obj.idx);
+    obj.div.style.opacity = active ? (nodeId ? '1' : '0.7') : '0';
+  });
+}
+
+// ─── LABEL TOGGLES ───────────────────────────────────────────────────────────
+
+let showNodeLabels = true;
+let showEdgeLabels = true;
+
+document.getElementById('btnNodeLabels').addEventListener('click', function () {
+  showNodeLabels = !showNodeLabels;
+  this.classList.toggle('active', showNodeLabels);
+  NODES.forEach(n => { if (n._lbl) n._lbl.visible = showNodeLabels; });
+  if (built2D) applyLabels2D();
+});
+
+document.getElementById('btnEdgeLabels').addEventListener('click', function () {
+  showEdgeLabels = !showEdgeLabels;
+  this.classList.toggle('active', showEdgeLabels);
+  setHover(hoveredMesh ? hoveredMesh.userData.id : null);
+  if (built2D) setHover2D(hoveredNode2D);
+});
+
+// ─── 2D VIEW ─────────────────────────────────────────────────────────────────
+
+const SVG2D     = document.getElementById('svg2d');
+const SVG_SCALE = 13;   // world units → SVG units
+const SVG_R     = 15;   // node circle radius (SVG units)
+const ARROW     = 10;   // arrowhead length  (SVG units)
+
+let built2D       = false;
+let is2D          = false;
+let hoveredNode2D = null;
+const nodeObjs2D      = {};
+const nodeLabelObjs2D = {};
+const edgePaths2D     = [];
+const edgeLabels2D    = [];
+
+function mkSvg(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function normDir2(ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay, d = Math.sqrt(dx*dx + dy*dy) || 1;
+  return [dx/d, dy/d];
+}
+
+function build2D() {
+  // Horizontal flowchart positions — columns by conceptual stage, rows within each
+  const FLAT_POS = {
+    'true-model':  [  0, -110],
+    'epsilon':     [  0,    0],
+    'eyx':         [  0,  110],
+    'obj':         [190,  -60],
+    'normal-eq':   [190,   60],
+    'beta-hat':    [360,    0],
+    'y-hat':       [520,  -60],
+    'residuals':   [520,   60],
+    'sse':         [690, -110],
+    'sigma-hat':   [690,    0],
+    'var-beta':    [690,  110],
+    't-stat':      [860, -110],
+    'r2':          [860,    0],
+    'adj-r2':      [860,  110],
+  };
+
+  SVG2D.innerHTML = '';
+  SVG2D.setAttribute('viewBox', '-75 -175 1010 375');
+  SVG2D.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+  // Arrowhead markers
+  const defs = mkSvg('defs');
+  for (const [type, col] of Object.entries(ECOLS_CSS)) {
+    const m = mkSvg('marker', {
+      id: `a2-${type}`, markerWidth: ARROW, markerHeight: 8,
+      refX: 0, refY: 4, orient: 'auto', markerUnits: 'userSpaceOnUse',
+    });
+    m.appendChild(mkSvg('polygon', { points: `0,1 ${ARROW},4 0,7`, fill: col }));
+    defs.appendChild(m);
+  }
+  SVG2D.appendChild(defs);
+
+  const root     = mkSvg('g');
+  const hdrGrp   = mkSvg('g');
+  const edgeGrp  = mkSvg('g');
+  const eLblGrp  = mkSvg('g');
+  const nodeGrp  = mkSvg('g');
+  const nLblGrp  = mkSvg('g');
+  root.append(hdrGrp, edgeGrp, eLblGrp, nodeGrp, nLblGrp);
+  SVG2D.appendChild(root);
+
+  // Column section headers
+  [
+    { x:   0, label: 'The Model',      color: '#e8c547' },
+    { x: 190, label: 'Estimation',     color: '#4ecdc4' },
+    { x: 360, label: 'OLS Estimator',  color: '#7c6af7' },
+    { x: 520, label: 'Key Quantities', color: '#7c6af7' },
+    { x: 690, label: 'Inference',      color: '#a8e6cf' },
+    { x: 860, label: 'Tests & Fit',    color: '#ff6b6b' },
+  ].forEach(h => {
+    const t = mkSvg('text', {
+      x: h.x, y: -148, fill: h.color, 'font-size': '7.5',
+      'text-anchor': 'middle', 'font-family': 'DM Mono, monospace',
+      'letter-spacing': '0.13em', opacity: '0.5',
+    });
+    t.textContent = h.label.toUpperCase();
+    const tick = mkSvg('line', {
+      x1: h.x, y1: -138, x2: h.x, y2: -130,
+      stroke: h.color, 'stroke-width': '0.5', opacity: '0.2',
+    });
+    hdrGrp.append(tick, t);
+  });
+
+  // Use the flat flowchart positions (no 3D projection)
+  const p2 = FLAT_POS;
+
+  // Edges
+  EDGES.forEach((e, i) => {
+    const [x1, y1] = p2[e.from];
+    const [x2, y2] = p2[e.to];
+
+    // Deterministic bezier control-point nudge
+    const ox = ((i * 17 + 3) % 13 - 6) * 14;
+    const oy = ((i * 13 + 7) % 9  - 4) * 11;
+    const cpx = (x1 + x2) / 2 + ox;
+    const cpy = (y1 + y2) / 2 + oy;
+
+    // Trim start (clear source circle)
+    const [sndx, sndy] = normDir2(x1, y1, cpx, cpy);
+    const sx = x1 + sndx * SVG_R,        sy = y1 + sndy * SVG_R;
+
+    // Trim end (clear dest circle + arrowhead)
+    const [endx, endy] = normDir2(cpx, cpy, x2, y2);
+    const ex = x2 - endx * (SVG_R + ARROW), ey = y2 - endy * (SVG_R + ARROW);
+
+    const path = mkSvg('path', {
+      d: `M${sx},${sy} Q${cpx},${cpy} ${ex},${ey}`,
+      fill: 'none', stroke: ECOLS_CSS[e.type],
+      'stroke-width': '2', 'stroke-opacity': '0.7',
+      'marker-end': `url(#a2-${e.type})`,
+    });
+    edgeGrp.appendChild(path);
+    edgePaths2D.push({ path, idx: i });
+
+    // Label at ~45% along curve
+    const t = 0.45;
+    const lx = (1-t)**2*sx + 2*(1-t)*t*cpx + t**2*ex;
+    const ly = (1-t)**2*sy + 2*(1-t)*t*cpy + t**2*ey;
+    const lw = e.label.length * 5.3 + 8;
+    const bg  = mkSvg('rect', { x: lx-lw/2, y: ly-6.5, width: lw, height: 13,
+                                 fill: '#0d0c15', rx: 2, opacity: '0.85' });
+    const txt = mkSvg('text', { x: lx, y: ly, fill: ECOLS_CSS[e.type],
+                                 'font-size': '8.5', 'text-anchor': 'middle',
+                                 'dominant-baseline': 'middle',
+                                 'font-family': 'DM Mono, monospace' });
+    txt.textContent = e.label;
+    eLblGrp.append(bg, txt);
+    edgeLabels2D.push({ bg, txt, idx: i });
+  });
+
+  // Nodes
+  NODES.forEach(n => {
+    const [cx, cy] = p2[n.id];
+    const g = mkSvg('g', { style: 'cursor:pointer' });
+    g.appendChild(mkSvg('circle', { cx, cy, r: SVG_R*1.7, fill: n.color, opacity: '0.07' }));
+    const circle = mkSvg('circle', { cx, cy, r: SVG_R, fill: n.color, 'fill-opacity': '0.88' });
+    g.appendChild(circle);
+    g.addEventListener('mouseenter', () => setHover2D(n.id));
+    g.addEventListener('mouseleave', () => setHover2D(null));
+    g.addEventListener('click', () => showPanel(n));
+    nodeGrp.appendChild(g);
+    nodeObjs2D[n.id] = { circle };
+
+    // Label below the circle
+    const lw  = n.label.length * 5.6 + 12;
+    const lbg = mkSvg('rect', { x: cx-lw/2, y: cy+SVG_R+5, width: lw, height: 14,
+                                  fill: '#0d0c15', rx: 2,
+                                  stroke: n.color, 'stroke-width': '0.5', 'stroke-opacity': '0.5',
+                                  'pointer-events': 'none' });
+    const ltxt = mkSvg('text', { x: cx, y: cy+SVG_R+15, fill: n.color,
+                                  'font-size': '10.5', 'text-anchor': 'middle',
+                                  'dominant-baseline': 'auto',
+                                  'font-family': 'DM Mono, monospace',
+                                  'pointer-events': 'none' });
+    ltxt.textContent = n.label;
+    nLblGrp.append(lbg, ltxt);
+    nodeLabelObjs2D[n.id] = { bg: lbg, txt: ltxt };
+  });
+
+  applyLabels2D();
+  setupPanZoom2D();
+}
+
+function setHover2D(nodeId) {
+  hoveredNode2D = nodeId;
+  const activeEdges    = new Set(nodeId ? nodeEdgeIdx[nodeId] : []);
+  const connectedNodes = new Set();
+  if (nodeId) {
+    connectedNodes.add(nodeId);
+    activeEdges.forEach(i => { connectedNodes.add(EDGES[i].from); connectedNodes.add(EDGES[i].to); });
+  }
+
+  NODES.forEach(n => {
+    const o = nodeObjs2D[n.id]; if (!o) return;
+    const active    = !nodeId || connectedNodes.has(n.id);
+    const isPrimary = n.id === nodeId;
+    o.circle.setAttribute('fill-opacity', active ? '0.88' : '0.12');
+    o.circle.setAttribute('r', isPrimary ? SVG_R * 1.2 : SVG_R);
+    const nl = nodeLabelObjs2D[n.id];
+    if (nl) {
+      const vis = showNodeLabels && active;
+      nl.txt.setAttribute('opacity', vis ? '1' : '0');
+      nl.bg.setAttribute('opacity',  vis ? '1' : '0');
+    }
+  });
+
+  edgePaths2D.forEach(obj => {
+    const active = !nodeId || activeEdges.has(obj.idx);
+    obj.path.setAttribute('stroke-opacity', active ? (nodeId ? '1' : '0.7') : '0.07');
+    obj.path.setAttribute('stroke-width',   active && nodeId ? '2.8' : '2');
+  });
+
+  edgeLabels2D.forEach(obj => {
+    const active = !nodeId || activeEdges.has(obj.idx);
+    const show   = showEdgeLabels && active;
+    obj.txt.setAttribute('opacity', show ? (nodeId ? '1' : '0.85') : '0');
+    obj.bg.setAttribute('opacity',  show ? '0.85' : '0');
+  });
+}
+
+function applyLabels2D() {
+  Object.values(nodeLabelObjs2D).forEach(o => {
+    const op = showNodeLabels ? '1' : '0';
+    o.txt.setAttribute('opacity', op); o.bg.setAttribute('opacity', op);
+  });
+  edgeLabels2D.forEach(o => {
+    const op = showEdgeLabels ? '0.85' : '0';
+    o.txt.setAttribute('opacity', op); o.bg.setAttribute('opacity', op);
+  });
+}
+
+function setupPanZoom2D() {
+  let vb = [-75, -175, 1010, 375];
+  let panStart = null;
+
+  function setVB() { SVG2D.setAttribute('viewBox', vb.join(' ')); }
+
+  SVG2D.addEventListener('wheel', ev => {
+    ev.preventDefault();
+    const f = ev.deltaY < 0 ? 0.88 : 1.14;
+    const rect = SVG2D.getBoundingClientRect();
+    const mx = vb[0] + (ev.clientX - rect.left) / rect.width  * vb[2];
+    const my = vb[1] + (ev.clientY - rect.top)  / rect.height * vb[3];
+    vb[2] = Math.min(Math.max(vb[2] * f, 120), 3000);
+    vb[3] = vb[2] * (375 / 1010);   // preserve aspect
+    vb[0] = mx - (ev.clientX - rect.left) / rect.width  * vb[2];
+    vb[1] = my - (ev.clientY - rect.top)  / rect.height * vb[3];
+    setVB();
+  }, { passive: false });
+
+  SVG2D.addEventListener('mousedown', ev => {
+    if (ev.button !== 0) return;
+    panStart = { x: ev.clientX, y: ev.clientY, vb: [...vb] };
+    SVG2D.style.cursor = 'grabbing';
+  });
+  window.addEventListener('mousemove', ev => {
+    if (!panStart || !is2D) return;
+    const rect = SVG2D.getBoundingClientRect();
+    vb[0] = panStart.vb[0] - (ev.clientX - panStart.x) / rect.width  * panStart.vb[2];
+    vb[1] = panStart.vb[1] - (ev.clientY - panStart.y) / rect.height * panStart.vb[3];
+    setVB();
+  });
+  window.addEventListener('mouseup', () => {
+    panStart = null;
+    if (is2D) SVG2D.style.cursor = 'grab';
+  });
+}
+
+// ─── VIEW SWITCHING ───────────────────────────────────────────────────────────
+
+const hint       = document.getElementById('hint');
+const threeCanvas = renderer.domElement;
+const threeLblDom = labelRenderer.domElement;
+
+document.getElementById('btn3d').addEventListener('click', () => {
+  is2D = false;
+  threeCanvas.style.display = '';
+  threeLblDom.style.display = '';
+  SVG2D.classList.remove('active');
+  document.getElementById('btn3d').classList.add('active');
+  document.getElementById('btn2d').classList.remove('active');
+  hint.innerHTML = 'drag · rotate<br>scroll · zoom<br>click · details';
+  controls.autoRotate = true;
+});
+
+document.getElementById('btn2d').addEventListener('click', () => {
+  is2D = true;
+  if (!built2D) { build2D(); built2D = true; }
+  threeCanvas.style.display = 'none';
+  threeLblDom.style.display = 'none';
+  SVG2D.classList.add('active');
+  document.getElementById('btn3d').classList.remove('active');
+  document.getElementById('btn2d').classList.add('active');
+  hint.innerHTML = 'drag · pan<br>scroll · zoom<br>click · details';
+  controls.autoRotate = false;
+});
+
+// ─── ANIMATION LOOP ───────────────────────────────────────────────────────────
+
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  // Hover detection
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(nodeMeshes);
+  const hit = hits.length > 0 ? hits[0].object : null;
+
+  if (hit !== hoveredMesh) {
+    hoveredMesh = hit;
+    setHover(hit ? hit.userData.id : null);
+    renderer.domElement.style.cursor = hit ? 'pointer' : 'default';
+  }
+
+  // Gentle pulse on hovered node
+  if (hoveredMesh) {
+    hoveredMesh.scale.setScalar(1.22 + Math.sin(t * 4) * 0.03);
+  }
+
+  // Glow nodes soft pulse
+  NODES.forEach(n => {
+    if (n._glow) n._glow.material.opacity = 0.06 + Math.sin(t * 1.2 + n.pos[0]) * 0.025;
+  });
+
+  controls.update();
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+}
+
+animate();
+
+// ─── RESIZE ───────────────────────────────────────────────────────────────────
+
+window.addEventListener('resize', () => {
+  const w = window.innerWidth, h = window.innerHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+  labelRenderer.setSize(w, h);
+  // LineMaterial needs the viewport resolution to compute pixel-width lines correctly
+  lineMaterials.forEach(m => m.resolution.set(w, h));
+});
+</script>
+</body>
+</html>

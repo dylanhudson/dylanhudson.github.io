@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OLS Regression Concept Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e17;
+    --surface: #1a1927;
+    --border: #2e2c45;
+    --accent1: #e8c547;
+    --accent2: #7c6af7;
+    --accent3: #4ecdc4;
+    --accent4: #ff6b6b;
+    --accent5: #a8e6cf;
+    --text: #fffffe;
+    --muted: #a7a5c0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  header {
+    padding: 2.5rem 3rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 1.5rem;
+  }
+
+  header h1 {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 2rem;
+    color: var(--accent1);
+    letter-spacing: -0.02em;
+  }
+
+  header span {
+    color: var(--muted);
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .map-container {
+    padding: 2rem 3rem 3rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto auto auto;
+    gap: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .node {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.4rem 1.6rem;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .node:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .node:nth-child(1) { animation-delay: 0.05s; }
+  .node:nth-child(2) { animation-delay: 0.10s; }
+  .node:nth-child(3) { animation-delay: 0.15s; }
+  .node:nth-child(4) { animation-delay: 0.20s; }
+  .node:nth-child(5) { animation-delay: 0.25s; }
+  .node:nth-child(6) { animation-delay: 0.30s; }
+  .node:nth-child(7) { animation-delay: 0.35s; }
+  .node:nth-child(8) { animation-delay: 0.40s; }
+  .node:nth-child(9) { animation-delay: 0.45s; }
+  .node:nth-child(10) { animation-delay: 0.50s; }
+
+  .node-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+    font-weight: 500;
+  }
+
+  .node-formula {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-style: italic;
+    font-size: 1.3rem;
+    margin-bottom: 0.7rem;
+    line-height: 1.3;
+  }
+
+  .node-desc {
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 0.9rem;
+  }
+
+  .node-relations {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .rel-tag {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 2px;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+  }
+
+  .tag-uses { background: rgba(124,106,247,0.15); color: var(--accent2); border: 1px solid rgba(124,106,247,0.3); }
+  .tag-feeds { background: rgba(232,197,71,0.12); color: var(--accent1); border: 1px solid rgba(232,197,71,0.3); }
+  .tag-enables { background: rgba(78,205,196,0.12); color: var(--accent3); border: 1px solid rgba(78,205,196,0.3); }
+  .tag-from { background: rgba(255,107,107,0.12); color: var(--accent4); border: 1px solid rgba(255,107,107,0.3); }
+
+  /* Color accents per node */
+  .c1 { border-left: 3px solid var(--accent1); }
+  .c2 { border-left: 3px solid var(--accent2); }
+  .c3 { border-left: 3px solid var(--accent3); }
+  .c4 { border-left: 3px solid var(--accent4); }
+  .c5 { border-left: 3px solid var(--accent5); }
+
+  /* Spanning nodes */
+  .span2 { grid-column: span 2; }
+  .span3 { grid-column: span 3; }
+
+  /* Central node */
+  .node.central {
+    border: 1px solid var(--accent2);
+    background: rgba(124,106,247,0.08);
+  }
+
+  /* Flow section dividers */
+  .flow-label {
+    grid-column: span 3;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.3rem 0;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .flow-label span {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .flow-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .arrow-section {
+    grid-column: span 3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.2rem 0;
+    gap: 0.5rem;
+    color: var(--muted);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+  }
+
+  .big-arrow {
+    font-size: 1.2rem;
+    color: var(--accent2);
+  }
+
+  .divider-line {
+    grid-column: span 3;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border), transparent);
+  }
+
+  /* Legend */
+  .legend {
+    grid-column: span 3;
+    display: flex;
+    gap: 1.5rem;
+    padding: 1rem 0 0.5rem;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  .legend-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>OLS Regression</h1>
+  <span>Concept Relationship Map</span>
+</header>
+
+<div class="map-container">
+
+  <!-- Row 1: The model -->
+  <div class="flow-label" style="animation-delay:0.02s"><span>The Model</span></div>
+
+  <div class="node c1">
+    <div class="node-label" style="color:var(--accent1)">True Model</div>
+    <div class="node-formula">Y = Xβ + ε</div>
+    <div class="node-desc">The data-generating process. β and X are fixed constants. Y is random because ε is random. We never observe the true β.</div>
+    <div class="node-relations">
+      <span class="rel-tag tag-feeds">feeds → OLS objective</span>
+      <span class="rel-tag tag-feeds">feeds → ε assumptions</span>
+    </div>
+  </div>
+
+  <div class="node c4">
+    <div class="node-label" style="color:var(--accent4)">ε (Error Term)</div>
+    <div class="node-formula">ε ~ N(0, σ²I)</div>
+    <div class="node-desc">Captures noise, omitted variables, measurement error. Zero mean means OLS is unbiased. Normality justifies t and F tests. σ² is unknown.</div>
+    <div class="node-relations">
+      <span class="rel-tag tag-feeds">feeds → σ̂ estimation</span>
+      <span class="rel-tag tag-enables">enables → inference</span>
+    </div>
+  </div>
+
+  <div class="node c2">
+    <div class="node-label" style="color:var(--accent2)">E[Y | X]</div>
+    <div class="node-formula">E[Y|X] = Xβ</div>
+    <div class="node-desc">The mean function — the systematic part of the model. This is what Ŷ estimates on average. ε vanishes when taking expectations since E[ε] = 0.</div>
+    <div class="node-relations">
+      <span class="rel-tag tag-feeds">feeds → Ŷ (unbiased)</span>
+    </div>
+  </div>
+
+  <!-- Row 2: Estimation -->
+  <div class="flow-label" style="animation-delay:0.12s"><span>Estimation via OLS</span></div>
+
+  <div class="node c1 span2">
+    <div class="node-label" style="color:var(--accent1)">S(β) — OLS Objective</div>
+    <div class="node-formula">S(β) = (Y − Xβ)ᵀ(Y − Xβ)</div>
+    <div class="node-desc">The sum of squared residuals as a function of any β. Expanding gives YᵀY − 2βᵀXᵀY + βᵀXᵀXβ. We minimize this over all possible β values — β̂ is not yet known at this stage.</div>
+    <div class="node-relations">
+      <span class="rel-tag tag-feeds">feeds → normal equations (via derivative)</span>
+      <span class="rel-tag tag-feeds">feeds → SSE (evaluated at β̂)</span>
+    </div>
+  </div>
+
+  <div class="node c3">
+    <div class="node-label" style="color:var(--accent3)">Normal Equations</div>
+    <div class="node-formula">XᵀXβ = XᵀY</div>
+    <div class="node-desc">Setting ∂S/∂β = 0. Called "normal" because residuals are orthogonal (perpendicular) to col(X) — not related to the normal distribution.</div>
+    <div class="node-relations">
+      <span class="rel-tag tag-feeds">feeds → β̂</span>
+    </div>
+  </div>
+
+  <!-- Row 3: Key quantities -->
+  <div class="flow-label" style="animation-delay:0.22s"><span>Key Quantities</span></div>
+
+  <div class="node c2 central">
+    <div class="node-label" style="color:var(--accent2)">β̂ — OLS Estimator</div>
+    <div class="node-formula">β̂ = (XᵀX)⁻¹XᵀY</div>
+    <div class="node-desc">Solves the normal equations. BLUE by Gauss-Markov (needs E[ε|X]=0, homoskedasticity). Also the MLE when ε is normal. Requires XᵀX invertible.</div>
+    <div class="node-relations">
+      <span class="rel-tag tag-feeds">feeds → Ŷ</span>
+      <span class="rel-tag tag-feeds">feeds → residuals</span>
+      <span class="rel-tag tag-enables">enables → t-test</span>
+    </div>
+  </div>
+
+  <div class="node c1">
+    <div class="node-label" style="color:var(--accent1)">Ŷ — Fitted Values</div>
+    <div class="node-formula">Ŷ = Xβ̂ = HY</div>
+    <div class="node-desc">The projection of Y onto col(X). H = X(XᵀX)⁻¹Xᵀ is the hat matrix. H is symmetric (Hᵀ=H) and idempotent (H²=H). E[Ŷ] = Xβ.</div>
+    <div class="node-relations">
+      <span class="rel-tag tag-uses">uses → β̂</span>
+      <span class="rel-tag tag-feeds">feeds → residuals</span>
+      <span class="rel-tag tag-feeds">feeds → R²</span>
+    </div>
+  </div>
+
+  <div class="node c4">
+    <div class="node-label" style="color:var(--accent4)">Residuals</div>
+    <div class="node-formula">e = Y − Ŷ = (I−H)Y</div>
+    <div class="node-desc">Observed minus fitted. Not the same as ε (true error). Orthogonal to Ŷ by construction. Used to check model assumptions and estimate σ².</div>
+    <div class="node-relations">
+      <span class="rel-tag tag-from">from → Ŷ and Y</span>
+      <span class="rel-tag tag-feeds">feeds → SSE</span>
+      <span class="rel-tag tag-feeds">feeds → diagnostics</span>
+    </div>
+  </div>
+
+  <!-- Row 4: Inference quantities -->
+  <div class="flow-label" style="animation-delay:0.32s"><span>Inference</span></div>
+
+  <div class="node c3">
+    <div class="node-label" style="color:var(--accent3)">SSE</div>
+    <div class="node-formula">SSE = Σ(yᵢ−ŷᵢ)² = eᵀe</div>
+    <div class="node-desc">Sum of squared residuals — how much variation the model cannot explain. S(β) evaluated at β̂. Smaller SSE means better fit.</div>
+    <div class="node-relations">
+      <span class="rel-tag tag-from">from → residuals</span>
+      <span class="rel-tag tag-feeds">feeds → σ̂, R²</span>
+    </div>
+  </div>
+
+  <div class="node c5">
+    <div class="node-label" style="color:var(--accent5)">σ̂ (s) — Residual Std Error</div>
+    <div class="node-formula">s = √(SSE / (n−p))</div>
+    <div class="node-desc">Estimates the unknown σ from ε ~ N(0,σ²I). Dividing by n−p (not n) makes it unbiased — p degrees of freedom are used estimating β. Appears in R summary output.</div>
+    <div class="node-relations">
+      <span class="rel-tag tag-from">from → SSE</span>
+      <span class="rel-tag tag-feeds">feeds → SE(β̂)</span>
+    </div>
+  </div>
+
+  <div class="node c2">
+    <div class="node-label" style="color:var(--accent2)">Var(β̂) & SE(β̂)</div>
+    <div class="node-formula">Var(β̂) = σ²(XᵀX)⁻¹</div>
+    <div class="node-desc">SE(β̂ⱼ) = s√[(XᵀX)⁻¹ⱼⱼ]. In SLR: SE(β̂₁) = s / √Σ(xᵢ−x̄)². More spread in x → smaller SE → more precise estimate.</div>
+    <div class="node-relations">
+      <span class="rel-tag tag-uses">uses → σ̂, XᵀX</span>
+      <span class="rel-tag tag-feeds">feeds → t-test, CIs</span>
+    </div>
+  </div>
+
+  <!-- Row 5: Tests and fit -->
+  <div class="flow-label" style="animation-delay:0.42s"><span>Tests & Model Fit</span></div>
+
+  <div class="node c1">
+    <div class="node-label" style="color:var(--accent1)">t-statistic</div>
+    <div class="node-formula">t = (β̂ⱼ − c) / SE(β̂ⱼ)</div>
+    <div class="node-desc">Tests H₀: βⱼ = c (usually c=0). Follows t(n−p) distribution because σ is estimated. Significant → evidence the predictor has a real linear relationship with Y.</div>
+    <div class="node-relations">
+      <span class="rel-tag tag-uses">uses → β̂, SE(β̂)</span>
+      <span class="rel-tag tag-enables">enables → p-values, CIs</span>
+    </div>
+  </div>
+
+  <div class="node c4">
+    <div class="node-label" style="color:var(--accent4)">R²</div>
+    <div class="node-formula">R² = 1 − SSE/SST</div>
+    <div class="node-desc">Proportion of variance explained. Never decreases when adding predictors. High R² ≠ correct model — a true model can have R²≈0 if σ² is large relative to signal.</div>
+    <div class="node-relations">
+      <span class="rel-tag tag-from">from → SSE, SST</span>
+      <span class="rel-tag tag-feeds">feeds → adj. R²</span>
+    </div>
+  </div>
+
+  <div class="node c3">
+    <div class="node-label" style="color:var(--accent3)">Adjusted R²</div>
+    <div class="node-formula">1 − [(1−R²)(n−1)/(n−k−1)]</div>
+    <div class="node-desc">Penalizes for number of predictors k. Can decrease when adding unhelpful predictors. Better for comparing models of different sizes than raw R².</div>
+    <div class="node-relations">
+      <span class="rel-tag tag-from">from → R², n, k</span>
+      <span class="rel-tag tag-enables">enables → model comparison</span>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent2)"></div> uses (takes as input)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent1)"></div> feeds (produces / contributes to)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent3)"></div> enables (makes possible)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent4)"></div> derived from</div>
+    <div class="legend-item" style="margin-left:auto; color: var(--muted)">Flow: Model → Estimation → Key Quantities → Inference</div>
+  </div>
+
+</div>
+</body>
+</html>
